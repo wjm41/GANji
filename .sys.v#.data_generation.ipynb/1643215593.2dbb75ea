@@ -1,0 +1,383 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Imports"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/eos/home-d/drousso/SWAN_projects/Other/GANji\n",
+      "DAVID\n"
+     ]
+    }
+   ],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "\n",
+    "import os\n",
+    "import shutil\n",
+    "\n",
+    "import random\n",
+    "import re\n",
+    "import glob\n",
+    "from PIL import Image,ImageDraw,ImageFont\n",
+    "\n",
+    "import ENVCONFIG"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Load annotated font .csv and define root directory containing google fonts repo"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = pd.read_csv('google-fonts-annotation.csv')\n",
+    "\n",
+    "# change your path here\n",
+    "rds_dir = ENVCONFIG.rds_dir\n",
+    "ROOT = rds_dir+'/fonts/ofl'"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "define font filtering & retrieval function"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def filter_fonts_get_paths(df, root='./', variants=['_'], subsets=['_'], category=''):\n",
+    "    # exceptions\n",
+    "    if not variants or variants == [''] or variants == '': variants = ['_']\n",
+    "    if not subsets or subsets == [''] or subsets == '': subsets = ['_']\n",
+    "    # apply filters\n",
+    "    regex_filters = variants + subsets + ['_'+category]\n",
+    "    df_new = pd.concat([df.filter(regex=re.compile(regex, re.IGNORECASE), axis=1).sum(axis=1).astype(bool) for regex in regex_filters], axis=1)\n",
+    "    mask = df_new.all(axis=1)\n",
+    "    filtered_fontnames = list(df.loc[mask].family)\n",
+    "    # construct file paths\n",
+    "    paths = []\n",
+    "    for fontname in filtered_fontnames:\n",
+    "        if variants == ['_']: # select all variants\n",
+    "            sel = glob.glob(f'{root}/{fontname.lower()}/**/**/**/*.ttf', recursive=True)\n",
+    "            paths.extend(sel)\n",
+    "        else:\n",
+    "            for variant in variants:\n",
+    "                sel = glob.glob(f'{root}/{fontname.lower()}/**/**/{fontname}-{variant}.ttf', recursive=True) \n",
+    "                for path in sel:\n",
+    "                    paths.append(path)\n",
+    "    print(f'Found {len(paths)} font files.')\n",
+    "    return paths"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Define font blacklist"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fontblacklist=[\n",
+    "    #\"福\"\n",
+    "    'OtomanopeeOne-Regular',\n",
+    "    'PaletteMosaic-Regular',\n",
+    "    'Rock3D-Regular',\n",
+    "    'Shizuru-Regular',\n",
+    "    'YujiHentaiganaAkari-Regular',\n",
+    "    'YujiHentaiganaAkebono-Regular',\n",
+    "    \n",
+    "    #\"體\"\n",
+    "    'TrainOne-Regular',\n",
+    "    'SawarabiMincho-Regular',\n",
+    "    'Murecho[wght]'\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Create data for list of characters"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Found 90 font files.\n",
+      "\n",
+      "Starting 體\n",
+      "text w & h:  150 174\n",
+      "0 59 150 174\n",
+      "text w & h:  150 187\n",
+      "0 46 150 187\n",
+      "text w & h:  150 197\n",
+      "0 60 150 197\n",
+      "text w & h:  150 186\n",
+      "0 44 150 186\n",
+      "text w & h:  150 187\n",
+      "0 48 150 187\n",
+      "text w & h:  150 185\n",
+      "0 49 150 185\n",
+      "text w & h:  150 184\n",
+      "0 49 150 184\n",
+      "text w & h:  150 187\n",
+      "0 48 150 187\n",
+      "text w & h:  150 185\n",
+      "0 49 150 185\n",
+      "text w & h:  150 184\n",
+      "0 49 150 184\n",
+      "text w & h:  150 187\n",
+      "0 48 150 187\n",
+      "text w & h:  150 185\n",
+      "0 49 150 185\n",
+      "text w & h:  150 184\n",
+      "0 49 150 184\n",
+      "text w & h:  150 187\n",
+      "0 48 150 187\n",
+      "text w & h:  150 188\n",
+      "0 48 150 188\n",
+      "text w & h:  150 185\n",
+      "0 49 150 185\n",
+      "text w & h:  150 184\n",
+      "0 49 150 184\n",
+      "text w & h:  150 182\n",
+      "0 53 150 182\n",
+      "text w & h:  150 184\n",
+      "0 52 150 184\n",
+      "text w & h:  150 183\n",
+      "0 53 150 183\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/tmp/ipykernel_625/258888111.py:53: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).\n",
+      "  fig = plt.figure(figsize=(10,10))\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "text w & h:  150 186\n",
+      "0 54 150 186\n",
+      "text w & h:  150 189\n",
+      "0 52 150 189\n",
+      "text w & h:  150 183\n",
+      "0 49 150 183\n",
+      "text w & h:  150 162\n",
+      "0 24 150 162\n",
+      "text w & h:  150 177\n",
+      "0 36 150 177\n",
+      "text w & h:  150 176\n",
+      "0 37 150 176\n",
+      "text w & h:  150 176\n",
+      "0 36 150 176\n",
+      "text w & h:  150 173\n",
+      "0 37 150 173\n",
+      "text w & h:  150 174\n",
+      "0 37 150 174\n",
+      "text w & h:  150 173\n",
+      "0 37 150 173\n",
+      "text w & h:  150 171\n",
+      "0 37 150 171\n",
+      "text w & h:  150 183\n",
+      "0 49 150 183\n",
+      "text w & h:  150 189\n",
+      "0 45 150 189\n",
+      "text w & h:  150 189\n",
+      "0 45 150 189\n",
+      "Murecho[wght] is in blacklist\n",
+      "text w & h:  150 186\n",
+      "0 54 150 186\n",
+      "OtomanopeeOne-Regular is in blacklist\n",
+      "PaletteMosaic-Regular is in blacklist\n",
+      "text w & h:  150 186\n",
+      "0 47 150 186\n",
+      "text w & h:  150 198\n",
+      "0 49 150 198\n",
+      "text w & h:  150 186\n",
+      "0 50 150 186\n",
+      "Rock3D-Regular is in blacklist\n",
+      "text w & h:  150 186\n",
+      "0 50 150 186\n",
+      "text w & h:  150 177\n",
+      "0 42 150 177\n",
+      "SawarabiMincho-Regular is in blacklist\n",
+      "text w & h:  150 187\n",
+      "0 47 150 187\n",
+      "text w & h:  150 187\n",
+      "0 47 150 187\n",
+      "text w & h:  150 187\n",
+      "0 46 150 187\n",
+      "text w & h:  150 187\n",
+      "0 46 150 187\n",
+      "text w & h:  150 186\n",
+      "0 47 150 186\n",
+      "text w & h:  150 186\n",
+      "0 48 150 186\n",
+      "text w & h:  150 187\n",
+      "0 47 150 187\n",
+      "text w & h:  150 188\n",
+      "0 47 150 188\n",
+      "text w & h:  150 188\n",
+      "0 47 150 188\n",
+      "text w & h:  150 187\n",
+      "0 48 150 187\n",
+      "text w & h:  150 186\n",
+      "0 49 150 186\n",
+      "text w & h:  150 188\n",
+      "0 48 150 188\n",
+      "Shizuru-Regular is in blacklist\n",
+      "text w & h:  150 184\n",
+      "0 52 150 184\n",
+      "TrainOne-Regular is in blacklist\n",
+      "text w & h:  150 185\n",
+      "0 56 150 185\n",
+      "text w & h:  150 185\n",
+      "0 51 150 185\n"
+     ]
+    }
+   ],
+   "source": [
+    "characters=[\"福\"]\n",
+    "characters=[\"體\",\"福\",\"新\",\"年\",\"快\",\"樂\",\"身\",\"健\",\"康\",\"心\",\"想\",\"事\",\"成\"]\n",
+    "\n",
+    "IMG_WIDTH = 300\n",
+    "IMG_HEIGHT = 300\n",
+    "text_size = 150\n",
+    "\n",
+    "maxplotstoshow=1e6\n",
+    "showonlyfirstcharacter=True\n",
+    "\n",
+    "dontshowplots=False\n",
+    "paths = filter_fonts_get_paths(df, root=ROOT, subsets=['japanese'], variants=['_'], category='')\n",
+    "for text in characters:\n",
+    "    print()\n",
+    "    print('Starting',text)\n",
+    "    \n",
+    "    characterfolder=os.path.join('data',text)\n",
+    "    shutil.rmtree(characterfolder)\n",
+    "    try:\n",
+    "        os.mkdir(characterfolder)\n",
+    "    except:\n",
+    "        pass\n",
+    "    \n",
+    "    \n",
+    "    for r in range(len(paths)):\n",
+    "        # sample text and font\n",
+    "\n",
+    "        fontname=os.path.basename(paths[r]).split('.ttf')[0] \n",
+    "        if fontname in fontblacklist:\n",
+    "            print(fontname,'is in blacklist')\n",
+    "            continue\n",
+    "            \n",
+    "        font = ImageFont.truetype(paths[r], text_size)\n",
+    "\n",
+    "        # # get text info (not being used but may be useful)\n",
+    "        text_width, text_height = font.getsize(text)\n",
+    "        left, top, right, bottom = font.getbbox(text)\n",
+    "        print('text w & h: ', text_width, text_height)\n",
+    "        print(left, top, right, bottom)\n",
+    "\n",
+    "\n",
+    "\n",
+    "        x = (right-left) # we can adjust this according to IMG_WIDTH etc\n",
+    "        y = 150+(bottom-top)/2\n",
+    "\n",
+    "        # create a blank canvas with extra space between lines\n",
+    "        canvas = Image.new('RGB', (IMG_WIDTH, IMG_HEIGHT), \"red\")\n",
+    "\n",
+    "        # draw the text onto the text canvas\n",
+    "        draw = ImageDraw.Draw(canvas)\n",
+    "        draw.text((x, y), text, 'black', font, anchor='ms')\n",
+    "\n",
+    "        fig = plt.figure(figsize=(10,10))\n",
+    "        plt.imshow(canvas, aspect='auto')\n",
+    "        plt.axis('off')\n",
+    "        plt.margins(0)\n",
+    "        \n",
+    "        filename = os.path.join(characterfolder,fontname+'.jpg')\n",
+    "\n",
+    "        plt.savefig(filename,bbox_inches='tight',pad_inches=0)\n",
+    "        plt.title(fontname)\n",
+    "        # plt.imsave(filename, canvas, cmap='gray')\n",
+    "        # plt.imsave(filename, canvas)\n",
+    "        if r>maxplotstoshow or dontshowplots:\n",
+    "            plt.close()\n",
+    "    if showonlyfirstcharacter:\n",
+    "        dontshowplots=True"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "interpreter": {
+   "hash": "7367a18b348ca6007dd30e14cd00de3b4d55612a2acbb3a217e58adb00f48737"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
