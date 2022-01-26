@@ -1,3 +1,4 @@
 **/.sys.*
 **/.ipynb_checkpoints
 **/__pycache__
+**/.code-workspace
